@@ -1,0 +1,59 @@
+#!/usr/bin/env node
+
+var http = require('http'),
+    express = require('express'),
+    program = require('commander'),
+    fs = require('fs');
+
+app = express();
+http.createServer(app);
+
+
+var PORT = 3000;
+
+program
+    .version('0.0.1')
+    .option('-p, --path [value]', 'add the static files paths, default="./", multi paths separate by ","')
+    .option('-P, --Port [value]', 'set the server listen port, default="3000')
+    .option('-d, --default [value]', 'set default page, default="index.html/default.html"')
+    .parse(process.argv);
+
+// Get static path
+if (program.path) {
+    program.path = program.path.split(',')
+} else {
+    program.path = new Array('./');
+}
+
+// Set static files' path
+var cwd = process.cwd();
+app.use(express.static(cwd));
+program.path.forEach(function (item, index) {
+    console.log(item);
+    var path = '';
+    if (item.charAt(0) === '/') {
+        path = item;
+    } else {
+        path = cwd + '/' + item;
+    }
+    console.log(path);
+    app.use(express.static(path));
+});
+
+// Get listen port
+if (program.Port) {
+    PORT = program.Port;
+}
+
+// when there are not 'default.html/index.html', use the program.default page
+var indexPage = program.default;
+if (indexPage !== undefined) {
+    app.get('/', function (req, rsp) {
+        rsp.sendfile(cwd + '/' + indexPage);
+    })
+}
+
+
+app.listen(PORT);
+
+console.log("Static server listen on " + PORT);
